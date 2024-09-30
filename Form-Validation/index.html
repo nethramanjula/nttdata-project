@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Form Valdation</title>
+  </head>
+  <body>
+    <form id="registrationForm">
+      <label for="username">Username:</label>
+      <input
+        type="text"
+        id="username"
+        name="username"
+        data-required="true"
+        data-minlength="3"
+        data-maxlength="15"
+      />
+
+      <label for="email">Email:</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        data-required="true"
+        data-type="email"
+      />
+
+      <label for="password">Password:</label>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        data-required="true"
+        data-minlength="6"
+      />
+
+      <button type="submit">Register</button>
+      <div id="errorMessages"></div>
+    </form>
+
+    <script>
+      document
+        .getElementById("registrationForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const form = e.target;
+          const inputs = form.querySelectorAll("input");
+          let isValid = true;
+          let errors = [];
+
+          inputs.forEach((input) => {
+            const value = input.value.trim();
+            const fieldName = input.name;
+            const required = input.dataset.required === "true";
+            const minLength = input.dataset.minlength
+              ? parseInt(input.dataset.minlength)
+              : null;
+            const maxLength = input.dataset.maxlength
+              ? parseInt(input.dataset.maxlength)
+              : null;
+            const type = input.dataset.type;
+
+            if (required && value === "") {
+              isValid = false;
+              errors.push(`${fieldName} is required`);
+            }
+
+            if (minLength && value.length < minLength) {
+              isValid = false;
+              errors.push(
+                `${fieldName} must be at least ${minLength} characters long`
+              );
+            }
+
+            if (maxLength && value.length > maxLength) {
+              isValid = false;
+              errors.push(
+                `${fieldName} must be no more than ${maxLength} characters long`
+              );
+            }
+
+            if (type === "email" && !validateEmail(value)) {
+              isValid = false;
+              errors.push(`Please enter a valid email address`);
+            }
+          });
+
+          const errorMessagesDiv = document.getElementById("errorMessages");
+          errorMessagesDiv.innerHTML = "";
+
+          if (!isValid) {
+            errors.forEach((error) => {
+              const errorMsg = document.createElement("div");
+              errorMsg.textContent = error;
+              errorMessagesDiv.appendChild(errorMsg);
+            });
+          } else {
+            alert("Form submitted successfully");
+            form.submit();
+          }
+        });
+
+      function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(String(email).toLowerCase());
+      }
+    </script>
+  </body>
+</html>

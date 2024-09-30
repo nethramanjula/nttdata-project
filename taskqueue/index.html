@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      function createElement(type, props = {}, ...children) {
+        return {
+          type,
+          props: {
+            ...props,
+            children: children.map((child) =>
+              typeof child === "object" ? child : createTextElement(child)
+            ),
+          },
+        };
+      }
+
+      function createTextElement(text) {
+        return {
+          type: "TEXT_ELEMENT",
+          props: {
+            nodeValue: text,
+            children: [],
+          },
+        };
+      }
+
+      function render(element, container) {
+        const dom =
+          element.type === "TEXT_ELEMENT"
+            ? document.createTextNode("")
+            : document.createElement(element.type);
+
+        const isProperty = (key) => key !== "children";
+        Object.keys(element.props)
+          .filter(isProperty)
+          .forEach((name) => {
+            dom[name] = element.props[name];
+          });
+
+        element.props.children.forEach((child) => render(child, dom));
+
+        container.appendChild(dom);
+      }
+
+      function updateDom(dom, prevProps, nextProps) {
+        const isProperty = (key) => key !== "children";
+
+        Object.keys(prevProps)
+          .filter(isProperty)
+          .forEach((name) => {
+            if (!(name in nextProps)) {
+              dom[name] = "";
+            }
+          });
+
+        Object.keys(nextProps)
+          .filter(isProperty)
+          .forEach((name) => {
+            if (prevProps[name] !== nextProps[name]) {
+              dom[name] = nextProps[name];
+            }
+          });
+      }
+
+      function diffAndUpdate(oldElement, newElement, container) {
+        if (!oldElement) {
+          render(newElement, container);
+        } else if (!newElement) {
+          container.removeChild(oldElement);
+        } else if (oldElement.type !== newElement.type) {
+          const newDom = render(newElement);
+          container.replaceChild(newDom, oldElement);
+        } else {
+          updateDom(container, oldElement.props, newElement.props);
+
+          const childCount = Math.max(
+            oldElement.props.children.length,
+            newElement.props.children.length
+          );
+
+          for (let i = 0; i < childCount; i++) {
+            diffAndUpdate(
+              oldElement.props.children[i],
+              newElement.props.children[i],
+              container.childNodes[i]
+            );
+          }
+        }
+      }
+
+      let rootInstance = null;
+
+      function renderApp(element, container) {
+        const prevInstance = rootInstance;
+        const nextInstance = diffAndUpdate(prevInstance, element, container);
+        rootInstance = nextInstance;
+      }
+
+      const element = createElement(
+        "div",
+        { id: "app" },
+        createElement("h1", null, "Hello, Virtual DOM!"),
+        createElement("p", null, "This is a basic example.")
+      );
+
+      const container = document.getElementById("root");
+      renderApp(element, container);
+
+      setTimeout(() => {
+        const newElement = createElement(
+          "div",
+          { id: "app" },
+          createElement("h1", null, "Hello, Updated Virtual DOM!"),
+          createElement("p", null, "This is the updated text.")
+        );
+
+        renderApp(newElement, container);
+      }, 2000);
+    </script>
+  </body>
+</html>
